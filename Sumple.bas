@@ -1,83 +1,73 @@
-Sub AggregateDataForF1ToF10()
-    Dim wsCompanyAvg As Worksheet, wsBranchAvg As Worksheet, wsBranchSectionAvg As Worksheet
-    Dim dictCompany As Object, dictBranch As Object, dictSection As Object
-    Dim fileName As String, folderPath As String
-    Dim wb As Workbook, ws As Worksheet
-    Dim i As Long, j As Long, score As Double
-    Dim companyName As String, branchName As String, sectionName As String
-    Dim arrScores(1 To 10) As Double ' F1からF10のスコアを格納する配列
+Attribute VB_Name = "Module1"
+
+Sub AggregateData()
+    ' Excelのパフォーマンスを向上させるための初期設定
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
     
-    ' コレクションの初期化
-    Set dictCompany = CreateObject("Scripting.Dictionary")
-    Set dictBranch = CreateObject("Scripting.Dictionary")
-    Set dictSection = CreateObject("Scripting.Dictionary")
+    ' テンプレートシート名の定義
+    Const TemplateAllSheetName As String = "個人別(template)"
+    Const TemplateBranchSheetName As String = "支社別(template)"
+    Const TemplateBuilderSheetName As String = "通建会社別(template)"
     
-    ' 結果を出力するシートの設定
-    Set wsCompanyAvg = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
-    wsCompanyAvg.Name = "Company Avg F1-F10"
-    Set wsBranchAvg = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
-    wsBranchAvg.Name = "Branch Avg F1-F10"
-    Set wsBranchSectionAvg = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
-    wsBranchSectionAvg.Name = "Section Avg F1-F10"
+    ' 必要な変数の宣言
+    Dim wsTemplateAll As Worksheet, wsTemplateBranch As Worksheet, wsTemplateBuilder As Worksheet
+    Dim dictCompany As Object: Set dictCompany = CreateObject("Scripting.Dictionary")
+    Dim dictBranch As Object: Set dictBranch = CreateObject("Scripting.Dictionary")
+    Dim dictSection As Object: Set dictSection = CreateObject("Scripting.Dictionary")
+    Dim folderPath As String, fileName As String
+    Dim lastRow As Long, startRow As Long: startRow = 8
     
-    ' personディレクトリ内のファイルをループ
-    folderPath = ThisWorkbook.Path & "\person\"
+    ' テンプレートシートの設定
+    Set wsTemplateAll = ThisWorkbook.Sheets(TemplateAllSheetName)
+    Set wsTemplateBranch = ThisWorkbook.Sheets(TemplateBranchSheetName)
+    Set wsTemplateBuilder = ThisWorkbook.Sheets(TemplateBuilderSheetName)
+    
+    ' 既存シートの削除
+    DeleteSheetIfExists "個人別"
+    DeleteSheetIfExists "支社別"
+    DeleteSheetIfExists "通建会社別"
+    
+    ' テンプレートシートをコピーして新しいシートを作成
+    wsTemplateBranch.Copy Before:=wsTemplateBranch: ActiveSheet.Name = "支社別"
+    wsTemplateBuilder.Copy Before:=wsTemplateBuilder: ActiveSheet.Name = "通建会社別"
+    wsTemplateAll.Copy Before:=wsTemplateAll: ActiveSheet.Name = "個人別"
+    
+    ' データフォルダのパス設定
+    folderPath = ThisWorkbook.Path & "\personal_data_develop\"
     fileName = Dir(folderPath & "*.xlsx")
     
+    ' ファイルをループして処理
     Do While fileName <> ""
-        Set wb = Workbooks.Open(folderPath & fileName)
-        Set ws = wb.Sheets(1)
-        
-        ' データの読み取り
-        companyName = ws.Range("A4").Value
-        branchName = ws.Range("A2").Value
-        sectionName = ws.Range("A3").Value
-        
-        ' F1からF10までのスコアの読み取り
-        For i = 1 To 10
-            score = ws.Range("F" & i).Value
-            
-            ' 担当会社ごとの集計
-            If Not dictCompany.exists(companyName & " F" & i) Then
-                dictCompany(companyName & " F" & i) = Array(score, 1) ' スコアの合計とカウント
-            Else
-                dictCompany(companyName & " F" & i) = Array(dictCompany(companyName & " F" & i)(0) + score, dictCompany(companyName & " F" & i)(1) + 1)
-            End If
-            
-            ' 支社ごとの集計
-            If Not dictBranch.exists(branchName & " F" & i) Then
-                dictBranch(branchName & " F" & i) = Array(score, 1)
-            Else
-                dictBranch(branchName & " F" & i) = Array(dictBranch(branchName & " F" & i)(0) + score, dictBranch(branchName & " F" & i)(1) + 1)
-            End If
-            
-            ' 係ごとの集計
-            If Not dictSection.exists(branchName & " " & sectionName & " F" & i) Then
-                dictSection(branchName & " " & sectionName & " F" & i) = Array(score, 1)
-            Else
-                dictSection(branchName & " " & sectionName & " F" & i) = Array(dictSection(branchName & " " & sectionName & " F" & i)(0) + score, dictSection(branchName & " " & sectionName & " F" & i)(1) + 1)
-            End If
-        Next i
-        
-        wb.Close False ' ファイルを保存せずに閉じる
-        fileName = Dir() ' 次のファイルへ
+        ProcessFile folderPath & fileName, wsTemplateAll, dictCompany, dictBranch, dictSection, startRow
+        fileName = Dir()
     Loop
     
-    ' 結果の出力
-    OutputAverages wsCompanyAvg, dictCompany
-    OutputAverages wsBranchAvg, dictBranch
-    OutputAverages wsBranchSectionAvg, dictSection
+    ' 集計結果の出力（この部分の実装は省略されていますが、必要に応じて実装してください）
+    ' OutputAveragesBranch ...
+    ' OutputAveragesBuilder ...
     
-    MsgBox "集計が完了しました。"
+    ' Excelの設定を元に戻す
+    Application.Calculation = xlCalculationAutomatic
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
 End Sub
 
-' 平均値を出力する補助関数
-Sub OutputAverages(ws As Worksheet, dict As Object)
-    Dim key As Variant, i As Long
-    i = 1
-    For Each key In dict.keys
-        ws.Cells(i, 1).Value = key
-        ws.Cells(i, 2).Value = dict(key)(0) / dict(key)(1) ' 合計をカウントで割る
-        i = i + 1
-    Next key
+Private Sub DeleteSheetIfExists(sheetName As String)
+    Dim ws As Worksheet
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets(sheetName)
+    On Error GoTo 0
+    If Not ws Is Nothing Then ws.Delete
 End Sub
+
+Private Sub ProcessFile(filePath As String, ByRef wsTemplate As Worksheet, ByRef dictCompany As Object, _
+                        ByRef dictBranch As Object, ByRef dictSection As Object, ByRef startRow As Long)
+    ' ファイルからデータを読み込み、必要な処理を行う（具体的な実装は省略されています）
+    ' ここでデータを読み込み、集計し、wsTemplateにデータを出力するロジックを実装します。
+    ' filePath: 処理するファイルのパス
+    ' wsTemplate: データを出力するテンプレートワークシート
+    ' dictCompany, dictBranch, dictSection: 集計データを保持する辞書
+    ' startRow: データ出
