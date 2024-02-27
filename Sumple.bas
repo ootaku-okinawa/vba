@@ -1,25 +1,28 @@
-Sub SelectFolderAndDisplayPath()
+Sub SelectFolderAndDisplayPath(cellAddress As String)
     Dim fd As FileDialog
     Dim selectedFolder As String
     Dim targetCell As Range
 
-    ' フォルダ選択ダイアログの初期化
     Set fd = Application.FileDialog(msoFileDialogFolderPicker)
 
-    If fd.Show = -1 Then ' ユーザーがOKを押した場合
-        selectedFolder = fd.SelectedItems(1) ' 選択されたフォルダのパスを取得
+    If fd.Show = -1 Then
+        selectedFolder = fd.SelectedItems(1)
         
-        ' フルパスを表示したいセルを指定（例: シート1のA1セル）
-        Set targetCell = ThisWorkbook.Sheets("Sheet1").Range("A1")
-        
-        ' 選択されたフォルダのフルパスをセルに設定
+        Set targetCell = ThisWorkbook.Sheets("Sheet1").Range(cellAddress)
         targetCell.Value = selectedFolder
-        
-        ' オプション: セルの編集を可能にする
-        targetCell.Locked = False
+        targetCell.Locked = False ' セルのロックを解除（必要に応じて）
     Else
         MsgBox "No folder selected."
     End If
+End Sub
 
-    Set fd = Nothing
+
+' ボタン1用のラッパーマクロ
+Sub Button1_Click()
+    SelectFolderAndDisplayPath "A1"
+End Sub
+
+' ボタン2用のラッパーマクロ
+Sub Button2_Click()
+    SelectFolderAndDisplayPath "B1"
 End Sub
