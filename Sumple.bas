@@ -1,18 +1,24 @@
 Dim originalEnableEvents As Boolean
 Dim originalScreenUpdating As Boolean
 Dim originalCalculation As XlCalculation
+Dim originalDisplayAlerts As Boolean
 
 Sub SaveApplicationSettings()
+    ' 現在の設定を保存
     originalEnableEvents = Application.EnableEvents
     originalScreenUpdating = Application.ScreenUpdating
     originalCalculation = Application.Calculation
+    originalDisplayAlerts = Application.DisplayAlerts
 End Sub
 
 Sub RestoreApplicationSettings()
+    ' 保存した設定に戻す
     Application.EnableEvents = originalEnableEvents
     Application.ScreenUpdating = originalScreenUpdating
     Application.Calculation = originalCalculation
+    Application.DisplayAlerts = originalDisplayAlerts
 End Sub
+
 
 
 Sub MyMainProcedure()
