@@ -1,30 +1,24 @@
-# 個人スキルデータ集計ツール
-
-## 目次
-- [はじめに](#はじめに)
-- [ツールの概要](#ツールの概要)
-- [操作手順](#操作手順)
-  - [初期設定](#初期設定)
-  - [データの集計と出力](#データの集計と出力)
-- [トラブルシューティング](#トラブルシューティング)
-- [よくある質問](#よくある質問)
-- [連絡先情報](#連絡先情報)
-
-### はじめに
-このユーザーマニュアルでは、個人スキルデータ集計ツールの操作方法と機能について説明します。本ツールを使用することで、個々のスキルデータが格納されたExcelファイルを効率的に集計し、一覧で確認することが可能になります。
-
-### ツールの概要
-ツールは、指定されたディレクトリにある個人のスキルデータを集計し、結果をExcelファイルとして出力します。出力されるデータには、氏名、会社名、部署名、通建会社名などが含まれ、個別および集約された情報を確認できます。
-
-### 操作手順
-#### 初期設定
-1. **ディレクトリの設定**: `集計`シートのG10セルに、個人データが格納されたディレクトリを入力します。
-   - //ここに画面キャプチャ、ディレクトリ入力欄のキャプチャ
-2. G11セルに、集計されたファイルの出力先ディレクトリを入力します。
-   - //ここに画面キャプチャ、出力ディレクトリ入力欄のキャプチャ
-
-#### データの集計と出力
-1. **開始ボタンの使用**: `開始`ボタンを押下すると、集計が開始されます。
-   - //ここに画面キャプチャ、開始ボタンのキャプチャ
-2. 処理が終了すると、`処理が正常に終了しました`というメッセージが表示されます。
-   - //ここに画面キャプチャ、処理完了のメッセージキャプチャ
+Function ProcessValue(ByVal dic As Object, ByVal key As Variant) As Variant
+    If Not dic.Exists(key) Then
+        ProcessValue = "Key not found"
+        Exit Function
+    End If
+    
+    If IsArray(dic(key)) Then
+        ' 配列の場合、合計値をカウント値で割る
+        Dim total As Double
+        Dim count As Double
+        total = dic(key)(0)
+        count = dic(key)(1)
+        If count <> 0 Then
+            ProcessValue = total / count
+        Else
+            ProcessValue = "Error: Count is zero"
+        End If
+    ElseIf VarType(dic(key)) = vbString Then
+        ' 文字列の場合、そのまま使用
+        ProcessValue = dic(key)
+    Else
+        ProcessValue = "Error: Invalid data type"
+    End If
+End Function
